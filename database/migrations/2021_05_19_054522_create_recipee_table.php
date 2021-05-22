@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Scout\Searchable;
 
 class CreateRecipeeTable extends Migration
 {
@@ -11,6 +12,8 @@ class CreateRecipeeTable extends Migration
      *
      * @return void
      */
+    use Searchable;
+
     public function up()
     {
         Schema::create('recipees', function (Blueprint $table) {
@@ -18,6 +21,7 @@ class CreateRecipeeTable extends Migration
             $table->string('name');
             $table->string('description');
             $table->string('imagepath');
+            $table->string('ingredientsstr');
             $table->timestamps();
         });
     }

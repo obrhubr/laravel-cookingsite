@@ -25,18 +25,23 @@ Route::group(['middleware' => ['web']], function () {
      * GET Routes
      */
     Route::get('/', function (Request $request) {
-        $recipees = Recipee::where([
-            ['name', '!=', Null],
-            [ function ($query) use ($request) {
-                if (($term = $request->term)) {
-                    $query->orWhere('name', 'LIKE', '%' . $term . '%')->get();
-                }
-            }]
-        ])
-        ->orderBy("id", "desc")
-        ->paginate(10);
+        $str = preg_replace("/[^A-Za-z0-9 ]/u", "", $request->term);
+        if($str != '') {
+            $recipees = Recipee::search($str)->select(['id'])->from(0)->take(10)->get();
+        } else {
+            $recipees = Recipee::search('*')->select(['id'])->from(0)->take(10)->get();
+        }
 
-        return view('index', compact('recipees'))->with('i', (request()->input('page', 1) - 1) * 5);
+        $recipeelist = array();
+
+        foreach($recipees as $recipee) {
+            $recipeeres = Recipee::find($recipee->id);
+            array_push($recipeelist, $recipeeres);
+        }
+
+        return view('index', [
+            "recipees" => $recipeelist
+        ]);
     });
 
     Route::get('/recipees/view/{id}', function ($id) {
@@ -119,6 +124,7 @@ Route::group(['middleware' => ['web']], function () {
         $imageName = time().'.'.$request->image->extension();  
         $request->image->move(public_path('images'), $imageName);
         $recipee->imagepath = $imageName;
+        $ingredientsstr = "";
 
         $ingredientsarr = array();
 
@@ -143,10 +149,13 @@ Route::group(['middleware' => ['web']], function () {
             $ingredient->name = $ing["name"];
             $ingredient->amount = $ing["amount"];
 
+            $ingredientsstr = $ingredientsstr . ";" . $ing["name"];
+
             array_push($ingredientsarr, $ingredient);
             $i += 1;
         }
 
+        $recipee->ingredientsstr = $ingredientsstr;
         $recipee->save();
         $recipee = $recipee->ingredients()->saveMany($ingredientsarr);
         
@@ -173,6 +182,7 @@ Route::group(['middleware' => ['web']], function () {
         $imageName = time().'.'.$request->image->extension();  
         $request->image->move(public_path('images'), $imageName);
         $recipee->imagepath = $imageName;
+        $ingredientsstr = "";
 
         $ingredientsarr = array();
 
@@ -196,10 +206,13 @@ Route::group(['middleware' => ['web']], function () {
             $ingredient->name = $ing["name"];
             $ingredient->amount = $ing["amount"];
 
+            $ingredientsstr = $ingredientsstr . ";" . $ing["name"];
+
             array_push($ingredientsarr, $ingredient);
             $i += 1;
         }
 
+        $recipee->ingredientsstr = $ingredientsstr;
         $recipee->save();
         $recipee = $recipee->ingredients()->saveMany($ingredientsarr);
         
