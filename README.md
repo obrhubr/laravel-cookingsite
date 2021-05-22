@@ -9,7 +9,7 @@ This project was about learning Laravel. It is about
 
 ## Built with
 
-This was built using Laravel sail, Prometheus, Grafana, MySQL and Redis. Laravel is responsible for serving the actual webpage. It also saves some stats to Redis and the main data is persisted in a MySQL database. 
+This was built using Laravel sail, Prometheus, Grafana, MySQL, Elasticsearch and Redis. Laravel is responsible for serving the actual webpage. It also saves some stats to Redis and the main data is persisted in a MySQL database. Elasticsearch was used to make ingredients searchable.
 
 ## What is it
 
