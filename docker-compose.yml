@@ -1,0 +1,97 @@
+# For more information: https://laravel.com/docs/sail
+version: '3'
+services:
+    laravel.test:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.0
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.0/app
+        ports:
+            - '${APP_PORT:-80}:80'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        ports:
+            - "80:80"
+        networks:
+            - sail
+            - back-tier
+        depends_on:
+            - mysql
+            - redis
+    mysql:
+        image: 'mysql:8.0'
+        expose:
+            - '${FORWARD_DB_PORT:-3306}/tcp'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        volumes:
+            - 'sailmysql:/var/lib/mysql'
+        networks:
+            - back-tier
+        healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+
+    redis:
+        image: 'redis:alpine'
+        expose:
+            - '${FORWARD_REDIS_PORT:-6379}/tcp'
+        volumes:
+            - 'sailredis:/data'
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+
+    prometheus:
+        image: prom/prometheus:v2.1.0
+        volumes:
+            - ./prometheus/:/etc/prometheus/
+            - prometheus_data:/prometheus
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+            - '--web.console.templates=/usr/share/prometheus/consoles'
+        expose:
+            - 9090/tcp
+        networks:
+            - back-tier
+        restart: always
+    
+    grafana:
+        image: grafana/grafana
+        user: "472"
+        ports:
+            - 3000:3000
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./grafana/provisioning/:/etc/grafana/provisioning/
+        env_file:
+            - ./grafana/config.monitoring
+        networks:
+            - back-tier
+            - front-tier
+        restart: always
+
+networks:
+    sail:
+        driver: bridge
+    front-tier:
+    back-tier:
+    
+volumes:
+    sailmysql:
+        driver: local
+    sailredis:
+        driver: local
+    prometheus_data: {}
+    grafana_data: {}
